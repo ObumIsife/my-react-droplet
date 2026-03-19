@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  react-app_frontend:
+    build: .
+    ports:
+      - "3000:80"
+    volumes:
+      - ./src:/app/src
+    environment:
+      - REACT_APP_NAME=obum
+      - CHOKIDAR_USEPOLLING=true
