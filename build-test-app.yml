@@ -1,0 +1,50 @@
+name: Staging Frontend Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install packages
+        run: npm install
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Build and Push Docker Image
+        uses: mr-smithers-excellent/docker-build-push@v6
+        with:
+          image: obumisife2008/react-staging
+          registry: docker.io
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          
+      - name: Deploy on staging server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/react-staging:latest
+
+            docker stop react-staging || true
+            docker rm react-staging || true
+
+            docker run -d \
+              --name react-staging \
+              -p 3000:80 \
+              ${{ secrets.DOCKER_USERNAME }}/react-staging:latest
